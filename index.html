@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<title>축협교대근무</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="축협근무"/>
+
+<link rel="apple-touch-icon" href="icon.png"/>
+<link rel="shortcut icon" href="icon.png"/>
+<link rel="manifest" href="manifest.json">
+
+<style>
+
+*{-webkit-tap-highlight-color:transparent;box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,sans-serif;padding:10px;background:#f0f2f5;color:#333}
+
+.app{width:100%;max-width:500px;margin:0 auto;background:#fff;padding:12px;border-radius:20px;box-shadow:0 10px 25px rgba(0,0,0,0.1)}
+
+.title{font-size:1.3rem;font-weight:800;text-align:center;margin:10px 0;color:#1e40af}
+
+.top-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px}
+
+#teamSel{padding:8px;border-radius:10px;border:1px solid #ddd;font-size:14px;flex:1.2;background:#fff;font-weight:600;height:40px}
+
+.nav-buttons{display:flex;gap:4px;flex:1;justify-content:flex-end}
+
+.nav-buttons button{
+padding:8px 10px;
+border-radius:10px;
+border:1px solid #ddd;
+background:#fff;
+font-size:13px;
+font-weight:bold;
+height:40px;
+}
+
+table{width:100%;border-collapse:collapse;table-layout:fixed;border:1px solid #e2e8f0}
+
+th{font-size:12px;padding:8px 0;background:#f8fafc;border:1px solid #e2e8f0;color:#64748b}
+
+td{border:1px solid #e2e8f0;vertical-align:top;width:14.28%;height:90px;background:#fff;position:relative}
+
+.cell{height:100%;padding:4px;display:flex;flex-direction:column;cursor:pointer}
+
+.today-cell{border:2.5px solid #2563eb!important;background:#f0f7ff!important}
+
+.date-row{display:flex;justify-content:space-between}
+
+.date{font-size:14px;font-weight:700}
+
+.shift{font-size:11px;font-weight:800;margin-top:2px}
+
+.shift-morning{color:#2563eb}
+.shift-afternoon{color:#ea580c}
+.shift-fullday{color:#dc2626}
+.shift-holiday{color:#64748b}
+
+.bg-morning{background:#eff6ff}
+.bg-afternoon{background:#fffbeb}
+.bg-fullday{background:#fef2f2}
+.bg-holiday{background:#f1f5f9}
+
+.memo-dot{
+width:6px;height:6px;background:#ef4444;border-radius:50%;margin-top:2px;
+}
+
+.memo-badge{
+font-size:9px;background:#fff;border:1px solid #cbd5e1;border-radius:4px;
+padding:2px 3px;margin-top:auto;color:#1e3a8a;font-weight:600;
+display:flex;align-items:center;gap:2px;
+}
+
+.memo-text{
+overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;
+}
+
+.memo-count{color:#ef4444;font-weight:800;margin-left:2px}
+
+.text-red{color:#ef4444}
+.text-blue{color:#3b82f6}
+
+/* 컴팩트 근무패턴 가이드 */
+
+.legend-container{
+margin-top:12px;
+padding:10px 12px;
+background:#f8fafc;
+border:1px solid #e2e8f0;
+border-radius:12px
+}
+
+.legend-title{
+display:block;
+font-size:12px;
+font-weight:700;
+color:#1e40af;
+margin-bottom:8px;
+border-left:3px solid #1e40af;
+padding-left:6px
+}
+
+.legend-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:6px
+}
+
+.legend-item{
+display:flex;
+align-items:center;
+gap:6px;
+font-size:11px;
+font-weight:600
+}
+
+.legend-swatch{
+width:16px;
+height:10px;
+border-radius:3px;
+border:1px solid #cbd5e1
+}
+
+.legend-footer{
+font-size:10px;
+color:#64748b;
+line-height:1.4;
+border-top:1px dashed #e2e8f0;
+padding-top:6px;
+margin-top:8px
+}
+
+.modal-overlay{
+display:none;
+position:fixed;
+inset:0;
+background:rgba(0,0,0,0.6);
+z-index:9999;
+align-items:center;
+justify-content:center;
+padding:20px
+}
+
+.modal{
+background:#fff;
+width:100%;
+max-width:320px;
+border-radius:20px;
+padding:20px
+}
+
+.memo-item{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:8px 0;
+border-bottom:1px solid #eee
+}
+
+.del-btn{color:#ef4444;font-weight:bold;cursor:pointer}
+
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<div id="ym" class="title"></div>
+
+<div class="top-row">
+<select id="teamSel">
+<option value="A">A팀</option>
+<option value="B">B팀</option>
+</select>
+
+<div class="nav-buttons">
+<button id="btnPrev">◀</button>
+<button id="btnToday">오늘</button>
+<button id="btnNext">▶</button>
+</div>
+</div>
+
+<table>
+<thead>
+<tr>
+<th class="text-red">일</th>
+<th>월</th>
+<th>화</th>
+<th>수</th>
+<th>목</th>
+<th>금</th>
+<th class="text-blue">토</th>
+</tr>
+</thead>
+<tbody id="calBody"></tbody>
+</table>
+
+<div class="legend-container">
+<span class="legend-title">📋 근무 패턴 가이드</span>
+
+<div class="legend-grid">
+
+<div class="legend-item">
+<div class="legend-swatch bg-morning"></div>
+<span class="shift-morning">오전(08:30~17:30)</span>
+</div>
+
+<div class="legend-item">
+<div class="legend-swatch bg-afternoon"></div>
+<span class="shift-afternoon">오후(11:30~19:30)</span>
+</div>
+
+<div class="legend-item">
+<div class="legend-swatch bg-fullday"></div>
+<span class="shift-fullday">종일(08:30~19:30)</span>
+</div>
+
+<div class="legend-item">
+<div class="legend-swatch bg-holiday"></div>
+<span class="shift-holiday">휴일(OFF)</span>
+</div>
+
+</div>
+
+<div class="legend-footer">
+• 평일 오후 → 토(종일) / 일(휴일)<br>
+• 평일 오전 → 토(휴일) / 일(종일)<br>
+• 메모작성: 날짜를 누르면 메모작성 창이 뜸<br>
+• 만든이: 노론이 한량
+</div>
+
+</div>
+</div>
+
+<!-- 메모 모달 -->
+<div id="modalOverlay" class="modal-overlay">
+<div class="modal">
+
+<div id="mTitle" style="font-size:16px;font-weight:800;color:#1e40af;margin-bottom:10px"></div>
+
+<div id="mList" style="max-height:180px;overflow-y:auto;margin-bottom:15px"></div>
+
+<div style="display:flex;gap:6px;margin-bottom:10px">
+<input id="mInput" type="text" placeholder="메모 입력"
+style="flex:1;padding:10px;border:1px solid #ddd;border-radius:10px">
+
+<button id="btnAddM"
+style="background:#1e40af;color:white;border:none;padding:0 12px;border-radius:10px">
+추가
+</button>
+</div>
+
+<button id="btnClose"
+style="width:100%;padding:10px;background:#f1f5f9;border:none;border-radius:10px;font-weight:bold">
+닫기
+</button>
+
+</div>
+</div>
+
+<!-- 삭제 확인 -->
+<div id="deleteModal" class="modal-overlay">
+<div class="modal">
+
+<div style="font-size:16px;font-weight:700;margin-bottom:20px;text-align:center">
+메모를 삭제할까요?
+</div>
+
+<div style="display:flex;gap:10px">
+
+<button id="btnDeleteConfirm"
+style="flex:1;padding:10px;background:#ef4444;color:white;border:none;border-radius:10px;font-weight:bold">
+삭제
+</button>
+
+<button id="btnDeleteCancel"
+style="flex:1;padding:10px;background:#f1f5f9;border:none;border-radius:10px;font-weight:bold">
+취소
+</button>
+
+</div>
+
+</div>
+</div>
+
+<script>
+
+/* 기존 스크립트 + 스와이프 기능 포함 */
+
+let viewDate=new Date()
+const todayObj=new Date()
+todayObj.setHours(0,0,0,0)
+
+let activeDate=""
+let deleteIndex=null
+
+const shiftTypes={
+MORNING:{id:'morning',name:'오전'},
+AFTERNOON:{id:'afternoon',name:'오후'},
+FULL:{id:'fullday',name:'종일'},
+OFF:{id:'holiday',name:'휴일'}
+}
+
+function getWeekNumber(date){
+const firstDay=new Date(date.getFullYear(),0,1)
+const past=(date-firstDay)/86400000
+return Math.ceil((past+firstDay.getDay()+1)/7)
+}
+
+function getShift(date,team){
+
+const day=date.getDay()
+const week=getWeekNumber(date)
+
+let isPatternA=(week%2===0)
+if(team==='B')isPatternA=!isPatternA
+
+if(day>=1&&day<=5){
+return isPatternA?shiftTypes.AFTERNOON:shiftTypes.MORNING
+}else if(day===6){
+return isPatternA?shiftTypes.FULL:shiftTypes.OFF
+}else{
+return isPatternA?shiftTypes.OFF:shiftTypes.FULL
+}
+}
+
+function render(){
+
+const year=viewDate.getFullYear()
+const month=viewDate.getMonth()
+
+document.getElementById('ym').innerText=`${year}년 ${month+1}월`
+
+const firstDay=new Date(year,month,1).getDay()
+const lastDate=new Date(year,month+1,0).getDate()
+
+const team=document.getElementById('teamSel').value
+const memos=JSON.parse(localStorage.getItem('memos')||"{}")
+
+let html=""
+let dateIdx=1
+
+for(let i=0;i<6;i++){
+
+html+="<tr>"
+
+for(let j=0;j<7;j++){
+
+const cell=i*7+j
+
+if(cell<firstDay||dateIdx>lastDate){
+html+="<td></td>"
+}else{
+
+const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(dateIdx).padStart(2,'0')}`
+
+const target=new Date(year,month,dateIdx)
+target.setHours(0,0,0,0)
+
+const isToday=(target.getTime()===todayObj.getTime())
+
+const s=getShift(target,team)
+
+let memoHtml=""
+let memoDot=""
+
+if(memos[dateStr]&&memos[dateStr].length>0){
+
+const count=memos[dateStr].length
+const firstMemo=memos[dateStr][0]
+
+memoDot=`<div class="memo-dot"></div>`
+
+memoHtml=`<div class="memo-badge">
+<span class="memo-text">${firstMemo}</span>
+${count>1?`<span class="memo-count">+${count-1}</span>`:''}
+</div>`
+}
+
+html+=`
+<td onclick="openMemo('${dateStr}')" class="bg-${s.id} ${isToday?'today-cell':''}">
+<div class="cell">
+
+<div class="date-row">
+<span class="date ${j===0?'text-red':j===6?'text-blue':''}">
+${dateIdx}
+</span>
+</div>
+
+<div class="shift shift-${s.id}">${s.name}</div>
+
+${memoDot}
+
+${memoHtml}
+
+</div>
+</td>
+`
+
+dateIdx++
+
+}
+
+}
+
+html+="</tr>"
+
+if(dateIdx>lastDate)break
+
+}
+
+document.getElementById('calBody').innerHTML=html
+
+}
+
+/* 메모 관련 */
+
+window.openMemo=(date)=>{
+
+activeDate=date
+
+document.getElementById('mTitle').innerText=`${date} 일정`
+
+const memos=JSON.parse(localStorage.getItem('memos')||"{}")
+
+const list=memos[date]||[]
+
+document.getElementById('mList').innerHTML=list.map((m,i)=>`
+<div class="memo-item">
+<span>${m}</span>
+<span class="del-btn" onclick="deleteMemo(${i})">✕</span>
+</div>
+`).join('')
+
+document.getElementById('modalOverlay').style.display="flex"
+
+}
+
+window.deleteMemo=(index)=>{
+deleteIndex=index
+document.getElementById('deleteModal').style.display="flex"
+}
+
+document.getElementById("btnDeleteConfirm").onclick=()=>{
+
+const memos=JSON.parse(localStorage.getItem('memos')||"{}")
+
+if(!memos[activeDate])return
+
+memos[activeDate].splice(deleteIndex,1)
+
+if(memos[activeDate].length===0){
+delete memos[activeDate]
+}
+
+localStorage.setItem('memos',JSON.stringify(memos))
+
+document.getElementById('deleteModal').style.display="none"
+
+openMemo(activeDate)
+
+render()
+
+}
+
+document.getElementById("btnDeleteCancel").onclick=()=>{
+document.getElementById('deleteModal').style.display="none"
+}
+
+document.getElementById('btnAddM').onclick=()=>{
+
+const val=document.getElementById('mInput').value.trim()
+
+if(!val)return
+
+const memos=JSON.parse(localStorage.getItem('memos')||"{}")
+
+if(!memos[activeDate])memos[activeDate]=[]
+
+memos[activeDate].push(val)
+
+localStorage.setItem('memos',JSON.stringify(memos))
+
+document.getElementById('mInput').value=""
+
+openMemo(activeDate)
+
+render()
+
+}
+
+document.getElementById('btnClose').onclick=()=>{
+document.getElementById('modalOverlay').style.display="none"
+}
+
+/* 달 이동 버튼 */
+
+document.getElementById('btnPrev').onclick=()=>{
+viewDate.setMonth(viewDate.getMonth()-1)
+render()
+}
+
+document.getElementById('btnNext').onclick=()=>{
+viewDate.setMonth(viewDate.getMonth()+1)
+render()
+}
+
+document.getElementById('btnToday').onclick=()=>{
+viewDate=new Date()
+render()
+}
+
+document.getElementById('teamSel').onchange=render
+
+/* 스와이프 */
+
+let touchStartX=0
+let touchEndX=0
+
+document.addEventListener("touchstart",(e)=>{
+touchStartX=e.changedTouches[0].screenX
+})
+
+document.addEventListener("touchend",(e)=>{
+touchEndX=e.changedTouches[0].screenX
+handleSwipe()
+})
+
+function handleSwipe(){
+
+const diff=touchEndX-touchStartX
+
+if(Math.abs(diff)<50)return
+
+if(diff<0){
+viewDate.setMonth(viewDate.getMonth()+1)
+}else{
+viewDate.setMonth(viewDate.getMonth()-1)
+}
+
+render()
+
+}
+
+render()
+
+</script>
+
+</body>
+</html>
