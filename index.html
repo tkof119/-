@@ -4,14 +4,11 @@
 <meta charset="UTF-8"/>
 <title>축협교대근무</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="축협근무"/>
-
 <link rel="apple-touch-icon" href="icon.png"/>
 <link rel="shortcut icon" href="icon.png"/>
-
 <style>
 *{-webkit-tap-highlight-color:transparent;box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,sans-serif;padding:10px;background:#f0f2f5;color:#333}
@@ -28,41 +25,31 @@ td{border:1px solid #e2e8f0;vertical-align:top;width:14.28%;height:90px;backgrou
 .today-cell{border:2.5px solid #2563eb!important;background:#f0f7ff!important}
 .date-row{display:flex;justify-content:space-between}
 .date{font-size:14px;font-weight:700}
-
 .shift{font-size:11px;font-weight:800;margin-top:2px;line-height:1.2}
 .shift-morning{color:#000}
 .shift-afternoon{color:#000}
 .shift-fullday{color:#2563eb}
 .shift-holiday{color:#ef4444}
-
 .holiday-name{font-size:9px;color:#ef4444;font-weight:700;margin-top:1px}
-
 .bg-morning{background:#eff6ff}
 .bg-afternoon{background:#fffbeb}
 .bg-fullday{background:#fef2f2}
 .bg-holiday{background:#f1f5f9}
-
 .memo-dot{width:6px;height:6px;background:#ef4444;border-radius:50%;margin-top:2px}
 .memo-badge{font-size:9px;background:#fff;border:1px solid #cbd5e1;border-radius:4px;padding:2px 3px;margin-top:auto;color:#1e3a8a;font-weight:600;display:flex;align-items:center;gap:2px}
 .memo-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
 .memo-count{color:#ef4444;font-weight:800;margin-left:2px}
 .text-red{color:#ef4444 !important}
 .text-blue{color:#3b82f6}
-
 .legend-container{margin-top:12px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px}
 .legend-title{display:block;font-size:12px;font-weight:700;color:#1e40af;margin-bottom:8px;border-left:3px solid #1e40af;padding-left:6px}
-.legend-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600}
-.legend-swatch{width:16px;height:10px;border-radius:3px;border:1px solid #cbd5e1}
 .legend-footer{font-size:10px;color:#64748b;line-height:1.4;border-top:1px dashed #e2e8f0;padding-top:6px;margin-top:8px}
-
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;padding:20px}
 .modal{background:#fff;width:100%;max-width:320px;border-radius:20px;padding:20px}
 .memo-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #eee}
 .del-btn{color:#ef4444;font-weight:bold;cursor:pointer}
 </style>
 </head>
-
 <body>
 <div class="app">
 <div id="ym" class="title"></div>
@@ -84,9 +71,7 @@ td{border:1px solid #e2e8f0;vertical-align:top;width:14.28%;height:90px;backgrou
 <tbody id="calBody"></tbody>
 </table>
 <div class="legend-container">
-<span class="legend-title">
-📋 근무 패턴 가이드</span>
-
+<span class="legend-title">📋 근무 패턴 가이드</span>
 <div class="legend-footer">
 • 평일 오전 → 토(휴일) / 일(종일)<br>
 • 평일 오후 → 토(종일) / 일(휴일)<br>
@@ -120,39 +105,52 @@ td{border:1px solid #e2e8f0;vertical-align:top;width:14.28%;height:90px;backgrou
 
 <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
 <script>
-let viewDate=new Date()
-const todayObj=new Date(); todayObj.setHours(0,0,0,0)
+let viewDate=new Date();
+const todayObj=new Date(); todayObj.setHours(0,0,0,0);
 let activeDate = "";
 let deleteIndex = null;
 
 const shiftTypes={
-MORNING:{id:'morning',name:'오전'},
-AFTERNOON:{id:'afternoon',name:'오후'},
-FULL:{id:'fullday',name:'종일'},
-OFF:{id:'holiday',name:'휴일'}
-}
+    MORNING:{id:'morning',name:'오전'},
+    AFTERNOON:{id:'afternoon',name:'오후'},
+    FULL:{id:'fullday',name:'종일'},
+    OFF:{id:'holiday',name:'휴일'}
+};
 
 function getHolidayName(y, m, d) {
-    const dStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const solar = Solar.fromYmd(y, m + 1, d);
-    const lunar = solar.getLunar();
-    const lm = lunar.getMonth();
-    const ld = lunar.getDay();
-    const fixed = {"01-01":"신정", "03-01":"삼일절", "05-05":"어린이날", "06-06":"현충일", "08-15":"광복절", "10-03":"개천절", "10-09":"한글날", "12-25":"성탄절"};
-    const mmdd = dStr.substring(5);
-    if(fixed[mmdd]) return fixed[mmdd];
-    if(lm===1 && (ld===1 || ld===2)) return "설날";
-    if(lm===12 && lunar.getDay() === (lunar.getMonthLen())) return "설날";
-    if(lm===8 && (ld===14 || ld===15 || ld===16)) return "추석";
-    if(lm===4 && ld===8) return "부처님오신날";
-    const checkAlt = (targetM, targetD) => {
-        const t = Solar.fromYmd(y, targetM, targetD);
-        const day = t.getWeek();
-        if(day===0) return Solar.fromYmd(y, targetM, targetD).next(1).toYmd() === dStr;
-        if(day===6) return Solar.fromYmd(y, targetM, targetD).next(2).toYmd() === dStr;
-        return false;
-    };
-    if(checkAlt(3,1) || checkAlt(5,5) || checkAlt(8,15) || checkAlt(10,3) || checkAlt(10,9) || checkAlt(12,25)) return "대체공휴일";
+    if (typeof Solar === 'undefined') return "";
+    try {
+        const solar = Solar.fromYmd(y, m + 1, d);
+        const lunar = solar.getLunar();
+        const lm = Math.abs(lunar.getMonth());
+        const ld = lunar.getDay();
+        const dStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+
+        // 1. 양력 공휴일
+        const fixed = {"01-01":"신정", "03-01":"삼일절", "05-05":"어린이날", "06-06":"현충일", "08-15":"광복절", "10-03":"개천절", "10-09":"한글날", "12-25":"성탄절"};
+        if(fixed[dStr.substring(5)]) return fixed[dStr.substring(5)];
+
+        // 2. 음력 명절 정밀 계산 (연휴 3일 보장)
+        // 설날: 음력 12월 말일(그믐), 1월 1일, 1월 2일
+        // lunar.getPrev(1)을 사용하여 전날이 12월 말일인지 체크하는 방식이 가장 정확합니다.
+        if (lm === 1 && (ld === 1 || ld === 2)) return "설날";
+        const tomorrowLunar = solar.next(1).getLunar();
+        if (tomorrowLunar.getMonth() === 1 && tomorrowLunar.getDay() === 1) return "설날";
+
+        // 추석: 음력 8월 14일, 15일, 16일
+        if (lm === 8 && (ld === 14 || ld === 15 || ld === 16)) return "추석";
+        
+        // 부처님오신날: 음력 4월 8일
+        if (lm === 4 && ld === 8) return "부처님오신날";
+
+        // 3. 대체공휴일
+        const holidayList = [[3,1],[5,5],[8,15],[10,3],[10,9],[12,25]];
+        for (let h of holidayList) {
+            let s = Solar.fromYmd(y, h[0], h[1]);
+            if(s.getWeek() === 0 && s.next(1).toYmd() === dStr) return "대체공휴일";
+            if(s.getWeek() === 6 && s.next(2).toYmd() === dStr) return "대체공휴일";
+        }
+    } catch(e) { return ""; }
     return "";
 }
 
@@ -171,78 +169,78 @@ function getShift(date, team) {
 }
 
 function render(){
-const year=viewDate.getFullYear(); const month=viewDate.getMonth()
-document.getElementById('ym').innerText=`${year}년 ${month+1}월`
-const firstDay=new Date(year,month,1).getDay(); const lastDate=new Date(year,month+1,0).getDate()
-const team=document.getElementById('teamSel').value
-const memos=JSON.parse(localStorage.getItem('memos')||"{}")
-let html=""; let dateIdx=1
-for(let i=0;i<6;i++){
-html+="<tr>"
-for(let j=0;j<7;j++){
-const cell=i*7+j
-if(cell<firstDay||dateIdx>lastDate){ html+="<td></td>" }else{
-const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(dateIdx).padStart(2,'0')}`
-const target=new Date(year,month,dateIdx); target.setHours(0,0,0,0)
-const s=getShift(target,team)
-const hName = getHolidayName(year, month, dateIdx)
-let memoHtml=""; let memoDot=""
-if(memos[dateStr]&&memos[dateStr].length>0){
-    const count=memos[dateStr].length; const firstMemo=memos[dateStr][0]
-    memoDot=`<div class="memo-dot"></div>`; memoHtml=`<div class="memo-badge"><span class="memo-text">${firstMemo}</span>${count>1?`<span class="memo-count">+${count-1}</span>`:''}</div>`
-}
-html+=`<td onclick="openMemo('${dateStr}')" class="bg-${s.id} ${target.getTime()===todayObj.getTime()?'today-cell':''}">
-<div class="cell">
-<div class="date-row"><span class="date ${j===0 || hName !== "" ? 'text-red' : j===6 ? 'text-blue' : ''}">${dateIdx}</span></div>
-<div class="shift shift-${s.id}">${s.name}</div>
-${hName !== "" ? `<div class="holiday-name">${hName}</div>` : ""}
-${memoDot}${memoHtml}
-</div></td>`
-dateIdx++
-}}
-html+="</tr>"; if(dateIdx>lastDate)break
-}
-document.getElementById('calBody').innerHTML=html
+    if (typeof Solar === 'undefined') { setTimeout(render, 50); return; }
+    const year=viewDate.getFullYear(); const month=viewDate.getMonth();
+    document.getElementById('ym').innerText=`${year}년 ${month+1}월`;
+    const firstDay=new Date(year,month,1).getDay(); const lastDate=new Date(year,month+1,0).getDate();
+    const team=document.getElementById('teamSel').value;
+    const memos=JSON.parse(localStorage.getItem('memos')||"{}");
+    let html=""; let dateIdx=1;
+
+    for(let i=0;i<6;i++){
+        html+="<tr>";
+        for(let j=0;j<7;j++){
+            const cell=i*7+j;
+            if(cell<firstDay||dateIdx>lastDate){ html+="<td></td>"; }else{
+                const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(dateIdx).padStart(2,'0')}`;
+                const target=new Date(year,month,dateIdx); target.setHours(0,0,0,0);
+                const s=getShift(target,team);
+                const hName = getHolidayName(year, month, dateIdx);
+                let memoHtml=""; let memoDot="";
+                if(memos[dateStr]&&memos[dateStr].length>0){
+                    const count=memos[dateStr].length; const firstMemo=memos[dateStr][0];
+                    memoDot=`<div class="memo-dot"></div>`;
+                    memoHtml=`<div class="memo-badge"><span class="memo-text">${firstMemo}</span>${count>1?`<span class="memo-count">+${count-1}</span>`:''}</div>`;
+                }
+                const isSun = (j === 0 || hName !== "");
+                html+=`<td onclick="openMemo('${dateStr}')" class="bg-${s.id} ${target.getTime()===todayObj.getTime()?'today-cell':''}">
+                <div class="cell">
+                <div class="date-row"><span class="date ${isSun ? 'text-red' : j===6 ? 'text-blue' : ''}">${dateIdx}</span></div>
+                <div class="shift shift-${s.id}">${s.name}</div>
+                ${hName !== "" ? `<div class="holiday-name">${hName}</div>` : ""}
+                ${memoDot}${memoHtml}
+                </div></td>`;
+                dateIdx++;
+            }
+        }
+        html+="</tr>"; if(dateIdx>lastDate)break;
+    }
+    document.getElementById('calBody').innerHTML=html;
 }
 
 window.openMemo=(date)=>{
-    activeDate=date; document.getElementById('mTitle').innerText=`${date} 일정`
-    const memos=JSON.parse(localStorage.getItem('memos')||"{}")
-    const list=memos[date]||[]
-    document.getElementById('mList').innerHTML=list.map((m,i)=>`
-    <div class="memo-item"><span>${m}</span><span class="del-btn" onclick="deleteMemo(${i})">✕</span></div>`).join('')
-    document.getElementById('modalOverlay').style.display="flex"
-}
-
-window.deleteMemo=(index)=>{ deleteIndex=index; document.getElementById('deleteModal').style.display="flex" }
-
+    activeDate=date; document.getElementById('mTitle').innerText=`${date} 일정`;
+    const memos=JSON.parse(localStorage.getItem('memos')||"{}"); const list=memos[date]||[];
+    document.getElementById('mList').innerHTML=list.map((m,i)=>`<div class="memo-item"><span>${m}</span><span class="del-btn" onclick="deleteMemo(${i})">✕</span></div>`).join('');
+    document.getElementById('modalOverlay').style.display="flex";
+};
+window.deleteMemo=(index)=>{ deleteIndex=index; document.getElementById('deleteModal').style.display="flex"; };
 document.getElementById("btnDeleteConfirm").onclick=()=>{
-    const memos=JSON.parse(localStorage.getItem('memos')||"{}")
-    if(!memos[activeDate])return
-    memos[activeDate].splice(deleteIndex,1); if(memos[activeDate].length===0) delete memos[activeDate]
-    localStorage.setItem('memos',JSON.stringify(memos)); document.getElementById('deleteModal').style.display="none"
-    openMemo(activeDate); render()
-}
-
-document.getElementById("btnDeleteCancel").onclick=()=>{ document.getElementById('deleteModal').style.display="none" }
-
+    const memos=JSON.parse(localStorage.getItem('memos')||"{}"); if(!memos[activeDate])return;
+    memos[activeDate].splice(deleteIndex,1); if(memos[activeDate].length===0) delete memos[activeDate];
+    localStorage.setItem('memos',JSON.stringify(memos)); document.getElementById('deleteModal').style.display="none"; openMemo(activeDate); render();
+};
+document.getElementById("btnDeleteCancel").onclick=()=>{ document.getElementById('deleteModal').style.display="none"; };
 document.getElementById('btnAddM').onclick=()=>{
-    const val=document.getElementById('mInput').value.trim(); if(!val)return
-    const memos=JSON.parse(localStorage.getItem('memos')||"{}")
-    if(!memos[activeDate])memos[activeDate]=[]; memos[activeDate].push(val)
-    localStorage.setItem('memos',JSON.stringify(memos)); document.getElementById('mInput').value=""
-    openMemo(activeDate); render()
-}
-
-document.getElementById('btnClose').onclick=()=>{ document.getElementById('modalOverlay').style.display="none" }
-document.getElementById('btnPrev').onclick=()=>{ viewDate.setMonth(viewDate.getMonth()-1); render() }
-document.getElementById('btnNext').onclick=()=>{ viewDate.setMonth(viewDate.getMonth()+1); render() }
-document.getElementById('btnToday').onclick=()=>{ viewDate=new Date(); render() }
-document.getElementById('teamSel').onchange=render
-
-let touchStartX=0; let touchEndX=0; document.addEventListener("touchstart",(e)=>{touchStartX=e.changedTouches[0].screenX}); 
-document.addEventListener("touchend",(e)=>{touchEndX=e.changedTouches[0].screenX; const diff=touchEndX-touchStartX; if(Math.abs(diff)<50)return; if(diff<0) viewDate.setMonth(viewDate.getMonth()+1); else viewDate.setMonth(viewDate.getMonth()-1); render()});
-render()
+    const val=document.getElementById('mInput').value.trim(); if(!val)return;
+    const memos=JSON.parse(localStorage.getItem('memos')||"{}"); if(!memos[activeDate])memos[activeDate]=[]; memos[activeDate].push(val);
+    localStorage.setItem('memos',JSON.stringify(memos)); document.getElementById('mInput').value=""; openMemo(activeDate); render();
+};
+document.getElementById('btnClose').onclick=()=>{ document.getElementById('modalOverlay').style.display="none"; };
+document.getElementById('btnPrev').onclick=()=>{ viewDate.setMonth(viewDate.getMonth()-1); render(); };
+document.getElementById('btnNext').onclick=()=>{ viewDate.setMonth(viewDate.getMonth()+1); render(); };
+document.getElementById('btnToday').onclick=()=>{ viewDate=new Date(); render(); };
+document.getElementById('teamSel').onchange=render;
+let touchStartX=0; let touchEndX=0; 
+document.addEventListener("touchstart",(e)=>{touchStartX=e.changedTouches[0].screenX}); 
+document.addEventListener("touchend",(e)=>{
+    touchEndX=e.changedTouches[0].screenX; const diff=touchEndX-touchStartX; 
+    if(Math.abs(diff)<50)return; 
+    if(diff<0) viewDate.setMonth(viewDate.getMonth()+1); else viewDate.setMonth(viewDate.getMonth()-1); 
+    render();
+});
+window.onload = render;
+render();
 </script>
 </body>
 </html>
